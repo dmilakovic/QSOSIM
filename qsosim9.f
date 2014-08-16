@@ -3,6 +3,9 @@ c QSOSIM9. Prog. to make synthetic QSO spectrum - John Webb, UNSW, Dec 2013
 c Uses VPFIT Voigt profile programs
 c Compile using Makefile
 c ----------------------------------------------------------------------------
+	SUBROUTINE QSOSIM9(zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
+     :          sigblur,s2n,inoise,numlls,dvavoid,npts,lambda,flux,
+     :          flerr,nnflux)
 	  real*4 wda(262144),danoabs(262144),tau(262144)
 	  real*4 da4(262144),da4conv(262144)
 	  real*4 da_err4(262144),da4smno(262144)
@@ -12,6 +15,8 @@ c ----------------------------------------------------------------------------
 	  real*4 a12p5,nc,nuplim,rn,a13p75,mbp1,zqso,zqsop1,pi
 	  real*4 c,d,p,q,r,s,s2n,dvavoid,vlight,zleft,zright
 	  real*4 nhills(20),blls(20),zlls(20)
+	  real*4 lambda(262144),flux(262144)
+	  real*4 flerr(262144), nnflux(262144)
       real*8 alm, fik,asm,sigblur
 	  integer idum,numlls,iflag,inoise
 	  data pi/3.14159265/
@@ -36,18 +41,18 @@ c Max no. of pixels, hard-coded in array declarations
 	  nptsmax=262144
 	  nemlines=30
 
-c Read in simulation parameters
-	  open(unit=17,file='sin.dat',err=101)
-	  goto 102
-101	  write(6,*)' Error - no sin.dat, or format wrong'
-      stop
-102   read(17,*)zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
-     :          sigblur,s2n,inoise,numlls,dvavoid
-c Read in any specified LLS
-      do i=1,numlls
-        read(17,*)nhills(i),blls(i),zlls(i)
-c      write(6,*)nhills(i),blls(i),zlls(i)
-      end do
+c$$$c Read in simulation parameters
+c$$$	  open(unit=17,file='sin.dat',err=101)
+c$$$	  goto 102
+c$$$101	  write(6,*)' Error - no sin.dat, or format wrong'
+c$$$      stop
+c$$$102   read(17,*)zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
+c$$$     :          sigblur,s2n,inoise,numlls,dvavoid
+c$$$c Read in any specified LLS
+c$$$      do i=1,numlls
+c$$$        read(17,*)nhills(i),blls(i),zlls(i)
+c$$$c      write(6,*)nhills(i),blls(i),zlls(i)
+c$$$      end do
 c alpha is QSO spectral index, vmag is the V magnitude
 c wstart, wend, dw are the start and end wavelengths and pixel size
 c nc is the column density cut-off (REAL, NOT log10)
@@ -95,6 +100,8 @@ c Next section makes absorption lines
 c g is from dn=A(1+z)^g dz, beta is from dn propto N^{-beta} dN.
 c a13p75 is the value of A for lines above logN=13.75.
 c gp1= gamma+1, mbp1=1-beta, nc is N cutoff, n is total no. of lines
+      nc=nc*1E12
+      nuplim=nuplim*1E16
       g=2.0
       a13p75=10.0
       beta=1.7
@@ -106,6 +113,7 @@ c gp1= gamma+1, mbp1=1-beta, nc is N cutoff, n is total no. of lines
 c Calculate the total no. of lines
       a=a13p75*((nc)/(10**13.75))**(1.-beta)
       rn=(a/gp1)*( z2p1**gp1 - z1p1**gp1 )
+	write (*,*)a
       n=nint(rn)
       write(6,*)' Total no. of lines = ',n
 
@@ -208,11 +216,16 @@ c Plot spectrum
       ymax=ymax+0.5*ymax
       ymin=ymin-0.5*ymin
 
-c Write out normalised spectrum to ascii file
-      open(unit=18,file='spec.dat',status='new')
+c Data to be returned into main program
+	
+c      open(unit=18,file='spec.dat',status='new')
+ 100	format(f10.5,2x,f10.5,2x,f10.5,2x,f10.5)
       do i=1,npts
-      write(18,*)wda(i),da4smno(i)/danoabs(i),da_err4(i)/danoabs(i),
-     :           da4conv(i)/danoabs(i)
+	 lambda(i)=wda(i)
+	 flux(i)=da4smno(i)/danoabs(i)
+	 flerr(i)=da_err4(i)/danoabs(i)
+	 nnflux(i)=da4conv(i)/danoabs(i)
+         write(*,100)lambda(i),flux(i),flerr(i),nnflux(i)
       end do
 
       call PGENV (xmin,xmax,ymin,ymax,0,0)
@@ -228,7 +241,7 @@ c Write out normalised spectrum to ascii file
       call pgline(npts,wda,da_err4)
       call pgend
 
-      stop
+      return
       end
 
 c Numercial Recipes subroutine
