@@ -1,0 +1,10 @@
+FC=gfortran
+DM=/Users/dm
+CFITSIO=-L/opt/local/lib/ -lcfitsio
+NRECIPES=DM+/Programming/nrecipes_old/
+QSOSIM9=/Users/dm/Documents/Isotropy/o_code/qsosim9.o
+EXEC=writefits
+SOURCE=writefits.f
+
+all: 
+	$(FC) -o $(EXEC) $(SOURCE) $(CFITSIO)
