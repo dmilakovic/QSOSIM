@@ -5,7 +5,7 @@ c Compile using Makefile
 c ----------------------------------------------------------------------------
 	SUBROUTINE QSOSIM9(zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
      :          sigblur,s2n,inoise,numlls,dvavoid,npts,lambda,flux,
-     :          flerr,nnflux)
+     :          flerr,nnflux,npoints,xs,ys,CDDF,numlin,da4)
 	  real*4 wda(262144),danoabs(262144),tau(262144)
 	  real*4 da4(262144),da4conv(262144)
 	  real*4 da_err4(262144),da4smno(262144)
@@ -14,11 +14,14 @@ c ----------------------------------------------------------------------------
 	  real*4 sum,nhi,b,z,g,z1p1,z2p1,beta,x,gp1,w,ff
 	  real*4 a12p5,nc,nuplim,rn,a13p75,mbp1,zqso,zqsop1,pi
 	  real*4 c,d,p,q,r,s,s2n,dvavoid,vlight,zleft,zright
+	  real*4 epsilon, lognhi, bb
 	  real*4 nhills(20),blls(20),zlls(20)
-	  real*4 lambda(262144),flux(262144)
-	  real*4 flerr(262144), nnflux(262144)
-      real*8 alm, fik,asm,sigblur
-	  integer idum,numlls,iflag,inoise
+	  real*8 lambda(262144),flux(262144)
+	  real*8 flerr(262144), nnflux(262144)
+          real*8 alm, fik,asm,sigblur
+	  real*4, dimension(npoints) :: xs,ys,CDDF,dummy,nhi4,z4
+	  integer npoints,idum,numlls,iflag,inoise,index,numlin
+
 	  data pi/3.14159265/
 	  data vlight/299792.458/
       external ran3, gasdev3
@@ -38,25 +41,14 @@ c Approx. relative emission line strengths - from eyeballing a few spectra
      +              0.013,0.028,0.13,0.22,0.0093,0.034,0.4/
 
 c Max no. of pixels, hard-coded in array declarations
+	  write (6,*) '-----------------------------------------'
+	  write (6,*) 'Started QSOSIM9!'
 	  nptsmax=262144
 	  nemlines=30
 
-c$$$c Read in simulation parameters
-c$$$	  open(unit=17,file='sin.dat',err=101)
-c$$$	  goto 102
-c$$$101	  write(6,*)' Error - no sin.dat, or format wrong'
-c$$$      stop
-c$$$102   read(17,*)zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
-c$$$     :          sigblur,s2n,inoise,numlls,dvavoid
-c$$$c Read in any specified LLS
-c$$$      do i=1,numlls
-c$$$        read(17,*)nhills(i),blls(i),zlls(i)
-c$$$c      write(6,*)nhills(i),blls(i),zlls(i)
-c$$$      end do
 c alpha is QSO spectral index, vmag is the V magnitude
 c wstart, wend, dw are the start and end wavelengths and pixel size
 c nc is the column density cut-off (REAL, NOT log10)
-
 	  zqsop1=zqso+1
 	  f5550=10**(-(vmag+21.17)/2.5)
 	  const=f5550/(1.0/5550.0**(2+alpha))
@@ -66,7 +58,6 @@ c nc is the column density cut-off (REAL, NOT log10)
       	write(6,*)' Max. no. of pixels = ',nptsmax
       	stop
       end if
-
 	  do l=1,npts
 c Make wavelength scale and underlying power-law QSO continuum
 	     wda(l)=wstart+((l-1)*dw)
@@ -85,7 +76,7 @@ c Put emission lines in. Guess/approximation for emission line width:
            da(i)=da(i)+g
          end do
       end do
-
+	  write (6,*) 'Emission lines inputted!'
 c Keep unabsorbed QSO spectrum
 	  do i=1,npts
 	    danoabs(i)=da(i)
@@ -95,14 +86,11 @@ c Generate optical depth array in preparation for absorption input
 	  do i=1,npts
 	    tau(i)=0.0
 	  end do
-
+         write (*,*) 'number of lines from spline = ',numlin
 c Next section makes absorption lines
 c g is from dn=A(1+z)^g dz, beta is from dn propto N^{-beta} dN.
 c a13p75 is the value of A for lines above logN=13.75.
 c gp1= gamma+1, mbp1=1-beta, nc is N cutoff, n is total no. of lines
-      nc=nc*1E12
-      nuplim=nuplim*1E16
-      g=2.0
       a13p75=10.0
       beta=1.7
       gp1=g+1.
@@ -111,35 +99,66 @@ c gp1= gamma+1, mbp1=1-beta, nc is N cutoff, n is total no. of lines
       mbp1=-beta+1.0
 
 c Calculate the total no. of lines
-      a=a13p75*((nc)/(10**13.75))**(1.-beta)
-      rn=(a/gp1)*( z2p1**gp1 - z1p1**gp1 )
-	write (*,*)a
-      n=nint(rn)
-      write(6,*)' Total no. of lines = ',n
+      n=numlin
+      write(6,*)' Total no. of lines = ',numlin
 
 c Initialise random numbers
       idum=time()
+      epsilon=0.00015
+	numlin=3114
+      do i=1,numlin
+	 dummy(i)=float(i)
+      end do
 
 c Call Voigt profile generator n times, once for each abs system
-	  do i=1,n
-
-c Random selection of redshifts
-        c=ran3(idum)
+	  do i=1,numlin
+	     
+c Random selection of NHI and redshifts (MODIFIED)
+ 1	c=ran3(idum)
+	index=0
+	nhi4(i)=0
+	z4(i)=0
+        if(c.lt.1.0) then
+! ----- discrepancies arise here! ------------------------------------
+	  do j=1,npoints
+	     if ((abs(CDDF(j)-c).lt.epsilon).and.
+     +           (abs(CDDF(j)-c).lt.abs(CDDF(index)-epsilon))) then
+		index=j
+	     end if
+	  end do
+        else
+          goto 1
+        end if
+	lognhi=xs(index)
+	nhi=10**xs(index)
+	nhi4(i)=xs(index)
+! --------------------------------------------------------------------
+        if ((lognhi.ge.12.0).and.(lognhi.lt.14.0)) then
+           g=1.51
+           a=10**1.52
+        else if ((lognhi.ge.14.0).and.(lognhi.lt.17.0)) then
+           g=2.16
+	   a=10**0.72
+        else if ((lognhi.ge.17.0).and.(lognhi.lt.22.0)) then
+	   g=1.33
+	   a=0.175
+        end if
+	gp1=g+1.
         p=z2p1**gp1
         q=z1p1**gp1
         x=alog10(c*(p-q)+q)
         x=x/gp1
         z=10**x -1.0
-        
-c Random selection of column densities
- 1      d=ran3(idum)
-        if(d.lt.1.0) then
-          y1=((alog10(1.0-d)) / mbp1) + alog10(nc)
-        else
-          goto 1
-        end if
-        nhi=10**y1
-
+	z4(i)=z
+! --------------------------------------------------------------------
+c 2	d=ran3(idum)
+c        if(d.lt.1.0) then
+c          y1=((alog10(1.0-d)) / mbp1) + alog10(nc)
+c        else
+c          goto 2
+c        end if
+c        nhi=10**y1
+c	nhi4(i)=y1!((alog10(1.0-d)) / mbp1) + alog10(nc)
 c b-params.  Guess at sigma and mean of b distribution of 3 and 23 km/s.
         b = 3*gasdev3(idum)+23
 
@@ -147,22 +166,23 @@ c Put the forest lines in, but only if:
 c 1. it is not if within the specified avoidance zone of each LLS, and
 c 2. if its N(HI) is less than the specified upper limit for forest lines
       iflag=0
-      do j=1,numlls
-      zright=zlls(j) + dvavoid*(1.0+zlls(j))/vlight
-      zleft=zlls(j) - dvavoid*(1.0+zlls(j))/vlight
-      if(z.ge.zleft.and.z.le.zright)iflag=1
-      end do
+c      do j=1,numlls
+c      zright=zlls(j) + dvavoid*(1.0+zlls(j))/vlight
+c      zleft=zlls(j) - dvavoid*(1.0+zlls(j))/vlight
+c      if(z.ge.zleft.and.z.le.zright)iflag=1
+c      end do
       if(nhi.ge.nuplim)iflag=1
       
       if(iflag.eq.0)call spvoigt(da,wda,npts,dble(nhi),
      :                           dble(z),dble(b),'H ','I   ')
 
       end do
+      
 c End of loop for forest.  Now put the LLS's in
-      do j=1,numlls
-        call spvoigt (da,wda,npts,dble(nhills(j)),dble(zlls(j)),
-     :                dble(blls(j)),'H ','I   ')
-      end do
+c      do j=1,numlls
+c        call spvoigt (da,wda,npts,dble(nhills(j)),dble(zlls(j)),
+c     :                dble(blls(j)),'H ','I   ')
+c      end do
 
 c Keep unconvolved real*4 spectrum
       do i=1,npts
@@ -171,7 +191,7 @@ c Keep unconvolved real*4 spectrum
 Convolution with assumed Gaussian instrumental profile
 	   write(6,*) "Convolving..."
 	   call blur(da, npts, sigblur)
-
+	   write (6,*) "Bluring complete..."
 c Make real*4 array for pgplot
       do i=1,npts
         da4conv(i)=real(da(i))
@@ -199,9 +219,11 @@ c inoise=0 is constant.  inoise=1 gets worse towards blue. See qsosim9.pdf.
         da4smno(i) = da4conv(i) + da_err4mod(i)
       end do
       end if
-
+	do i=1,npoints
+	   write (*,*) i, CDDF(i), xs(i)
+	end do
 c Plot spectrum
-      call PGBEGIN (0,'?',1,1)
+      call PGBEGIN (0,'/xserve',1,3)
       xmin=wstart
       xmax=wend
       ymin=0.0
@@ -222,13 +244,14 @@ c      open(unit=18,file='spec.dat',status='new')
  100	format(f10.5,2x,f10.5,2x,f10.5,2x,f10.5)
       do i=1,npts
 	 lambda(i)=wda(i)
-	 flux(i)=da4smno(i)/danoabs(i)
-	 flerr(i)=da_err4(i)/danoabs(i)
-	 nnflux(i)=da4conv(i)/danoabs(i)
-         write(*,100)lambda(i),flux(i),flerr(i),nnflux(i)
+	 flux(i)=da4smno(i)!/danoabs(i)
+	 flerr(i)=da_err4(i)!/danoabs(i)
+	 nnflux(i)=da4conv(i)!/danoabs(i)
+c         write(*,100)lambda(i),flux(i),flerr(i),nnflux(i)
       end do
 
-      call PGENV (xmin,xmax,ymin,ymax,0,0)
+
+      call PGENV (xmin,xmax,ymin,ymax,0,1)
       call PGLABEL ('Wavelength','f(lambda)','Linear wavelengths')
       call pgline(npts,wda,da4smno)
       call pgsci(5)
@@ -239,13 +262,22 @@ c      open(unit=18,file='spec.dat',status='new')
       call pgsls(1)
       call pgsci(3)
       call pgline(npts,wda,da_err4)
+
+	call pgsci(1)
+	call PGENV(1.0,real(numlin),11.5,22.5,0,1)
+	call PGLINE(numlin,dummy,nhi4)
+
+	call PGENV(1.0,real(numlin),1.7,3.3,0,1)
+	call PGLINE(numlin,dummy,z4)
       call pgend
 
       return
       end
 
 c Numercial Recipes subroutine
+!======================================================================
       FUNCTION ran3(idum)
+!======================================================================
       INTEGER idum
       INTEGER MBIG,MSEED,MZ
 C     REAL MBIG,MSEED,MZ
@@ -292,7 +324,9 @@ C     REAL mj,mk,ma(55)
       END
 
 c Numercial Recipes subroutine
+!======================================================================
       FUNCTION gasdev3(idum)
+!======================================================================
       INTEGER idum
       REAL gasdev3
 c Uses ran3
@@ -315,9 +349,10 @@ c Uses ran3
       endif
       return
       END
-
+!======================================================================
 c BLUR does Gaussian blurring on array xbuf
 	subroutine blur(xbuf,npt,sigma)
+!======================================================================
 	implicit none
 	integer nfilt, npt, i, il, ilow, k
 	real*8 xbuf(npt),ybuf(npt),work(512), sum
