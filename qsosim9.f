@@ -4,23 +4,27 @@ c Uses VPFIT Voigt profile programs
 c Compile using Makefile
 c ----------------------------------------------------------------------------
 	SUBROUTINE QSOSIM9(zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,
-     :          sigblur,s2n,inoise,numlls,dvavoid,npts,lambda,flux,
-     :          flerr,nnflux,npoints,xs,ys,CDDF,numlin,da4)
+     :          sigblur,s2n,inoise,dvavoid,npts,lambda,flux,
+     :          flerr,nnflux,npoints,xs,ys,CDDF,numlin)
 	  real*4 wda(262144),danoabs(262144),tau(262144)
 	  real*4 da4(262144),da4conv(262144)
 	  real*4 da_err4(262144),da4smno(262144)
 	  real*8 da(262144),da_err(262144),da_err4mod(262144)
 	  real*4 wems(30),relstr(30)
 	  real*4 sum,nhi,b,z,g,z1p1,z2p1,beta,x,gp1,w,ff
-	  real*4 a12p5,nc,nuplim,rn,a13p75,mbp1,zqso,zqsop1,pi
-	  real*4 c,d,p,q,r,s,s2n,dvavoid,vlight,zleft,zright
-	  real*4 epsilon, lognhi, bb
+	  real*4 a12p5,rn,a13p75,a13p1,mbp1,zqsop1,pi
+	  real*4 c,d,p,q,r,s,vlight,zleft,zright
+	  real*8 epsilon, lognhi, delta,mdelta
 	  real*4 nhills(20),blls(20),zlls(20)
+	  real*8 zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,sigblur
+	  real*8 s2n,dvavoid
 	  real*8 lambda(262144),flux(262144)
 	  real*8 flerr(262144), nnflux(262144)
-          real*8 alm, fik,asm,sigblur
-	  real*4, dimension(npoints) :: xs,ys,CDDF,dummy,nhi4,z4
-	  integer npoints,idum,numlls,iflag,inoise,index,numlin
+          real*8 alm, fik,asm
+	  real*4 n1,n2,n3
+	  real*4 factor
+	  real*8, dimension(npoints) :: xs,ys,CDDF,dummy,nhi4,z4, dummyy
+	  integer npts,npoints,idum,numlls,iflag,inoise,index,numlin
 
 	  data pi/3.14159265/
 	  data vlight/299792.458/
@@ -41,14 +45,14 @@ c Approx. relative emission line strengths - from eyeballing a few spectra
      +              0.013,0.028,0.13,0.22,0.0093,0.034,0.4/
 
 c Max no. of pixels, hard-coded in array declarations
-	  write (6,*) '-----------------------------------------'
+	  write (6,*) '--------------------------------------------------'
 	  write (6,*) 'Started QSOSIM9!'
 	  nptsmax=262144
 	  nemlines=30
 
 c alpha is QSO spectral index, vmag is the V magnitude
 c wstart, wend, dw are the start and end wavelengths and pixel size
-c nc is the column density cut-off (REAL, NOT log10)
+c       nc is the column density cut-off (REAL, NOT log10)
 	  zqsop1=zqso+1
 	  f5550=10**(-(vmag+21.17)/2.5)
 	  const=f5550/(1.0/5550.0**(2+alpha))
@@ -86,28 +90,25 @@ c Generate optical depth array in preparation for absorption input
 	  do i=1,npts
 	    tau(i)=0.0
 	  end do
-         write (*,*) 'number of lines from spline = ',numlin
+         write (*,*) 'Inputting absorption lines ...'
 c Next section makes absorption lines
 c g is from dn=A(1+z)^g dz, beta is from dn propto N^{-beta} dN.
 c a13p75 is the value of A for lines above logN=13.75.
 c gp1= gamma+1, mbp1=1-beta, nc is N cutoff, n is total no. of lines
       a13p75=10.0
       beta=1.7
-      gp1=g+1.
       z1p1=(wstart/1215.67)
       z2p1=zqsop1
       mbp1=-beta+1.0
 
 c Calculate the total no. of lines
       n=numlin
-      write(6,*)' Total no. of lines = ',numlin
-
+	
 c Initialise random numbers
       idum=time()
-      epsilon=0.00015
-	numlin=3114
-      do i=1,numlin
-	 dummy(i)=float(i)
+      do i=1,npoints
+	 dummy(i)=dble(i)
+	 dummyy(i)=dble((nc**mbp1-(10**xs(i))**mbp1)/(nc)**mbp1)
       end do
 
 c Call Voigt profile generator n times, once for each abs system
@@ -118,11 +119,13 @@ c Random selection of NHI and redshifts (MODIFIED)
 	index=0
 	nhi4(i)=0
 	z4(i)=0
+	mdelta=1.0
         if(c.lt.1.0) then
-! ----- discrepancies arise here! ------------------------------------
+! -------------------------------------------------------------------
 	  do j=1,npoints
-	     if ((abs(CDDF(j)-c).lt.epsilon).and.
-     +           (abs(CDDF(j)-c).lt.abs(CDDF(index)-epsilon))) then
+	     delta=abs(c-CDDF(j))
+	     if (delta.lt.mdelta) then
+		mdelta=delta
 		index=j
 	     end if
 	  end do
@@ -135,30 +138,30 @@ c Random selection of NHI and redshifts (MODIFIED)
 ! --------------------------------------------------------------------
         if ((lognhi.ge.12.0).and.(lognhi.lt.14.0)) then
            g=1.51
-           a=10**1.52
+           a13p1=10**1.52
+	   beta=1.43
+	   a=a13p1*((10**12.0)/(10**13.1))**(1.-beta)
+	   n1=a/(g+1.)*((z2p1)**(g+1.)-(z1p1)**(g+1.))
         else if ((lognhi.ge.14.0).and.(lognhi.lt.17.0)) then
            g=2.16
 	   a=10**0.72
+	   n2=a/(g+1.)*((z2p1)**(g+1.)-(z1p1)**(g+1.))
         else if ((lognhi.ge.17.0).and.(lognhi.lt.22.0)) then
 	   g=1.33
 	   a=0.175
+	   n3=a/(g+1.)*((z2p1)**(g+1.)-(z1p1)**(g+1.))
         end if
+	d=ran3(idum)	
 	gp1=g+1.
         p=z2p1**gp1
         q=z1p1**gp1
-        x=alog10(c*(p-q)+q)
+        x=alog10(d*(p-q)+q)
         x=x/gp1
         z=10**x -1.0
+c	write (*,*) index, c, CDDF(index), mdelta, xs(index), z
 	z4(i)=z
 ! --------------------------------------------------------------------
-c 2	d=ran3(idum)
-c        if(d.lt.1.0) then
-c          y1=((alog10(1.0-d)) / mbp1) + alog10(nc)
-c        else
-c          goto 2
-c        end if
-c        nhi=10**y1
-c	nhi4(i)=y1!((alog10(1.0-d)) / mbp1) + alog10(nc)
+
 c b-params.  Guess at sigma and mean of b distribution of 3 and 23 km/s.
         b = 3*gasdev3(idum)+23
 
@@ -177,7 +180,20 @@ c      end do
      :                           dble(z),dble(b),'H ','I   ')
 
       end do
-      
+	write (6,*) 'Calculating number of lines using three power laws
+     & (Kim et al. 2013)'
+	  n=nint(n1+n2+n3)
+	write (6,*) 'Total no. of lines from power laws = ',n
+	write (6,*) 'Calculating number of lines in original QSOSIM9'
+	  g=2.0
+	  a13p75=10.0
+	  beta=1.7
+	  gp1=g+1.
+	  a=a13p75*((nc)/(10**13.75))**(1.-beta)
+	  rn=(a/gp1)*( z2p1**gp1 - z1p1**gp1 )
+	  n=nint(rn)
+	  write(6,*)' Total no. of lines from QSOSIM9 = ',n
+   
 c End of loop for forest.  Now put the LLS's in
 c      do j=1,numlls
 c        call spvoigt (da,wda,npts,dble(nhills(j)),dble(zlls(j)),
@@ -190,7 +206,7 @@ c Keep unconvolved real*4 spectrum
       end do
 Convolution with assumed Gaussian instrumental profile
 	   write(6,*) "Convolving..."
-	   call blur(da, npts, sigblur)
+c	   call blur(da, npts, sigblur)
 	   write (6,*) "Bluring complete..."
 c Make real*4 array for pgplot
       do i=1,npts
@@ -219,11 +235,9 @@ c inoise=0 is constant.  inoise=1 gets worse towards blue. See qsosim9.pdf.
         da4smno(i) = da4conv(i) + da_err4mod(i)
       end do
       end if
-	do i=1,npoints
-	   write (*,*) i, CDDF(i), xs(i)
-	end do
+	
 c Plot spectrum
-      call PGBEGIN (0,'/xserve',1,3)
+      call PGBEGIN (0,'/vcps',1,3)
       xmin=wstart
       xmax=wend
       ymin=0.0
@@ -240,7 +254,6 @@ c Plot spectrum
 
 c Data to be returned into main program
 	
-c      open(unit=18,file='spec.dat',status='new')
  100	format(f10.5,2x,f10.5,2x,f10.5,2x,f10.5)
       do i=1,npts
 	 lambda(i)=wda(i)
@@ -264,11 +277,21 @@ c         write(*,100)lambda(i),flux(i),flerr(i),nnflux(i)
       call pgline(npts,wda,da_err4)
 
 	call pgsci(1)
-	call PGENV(1.0,real(numlin),11.5,22.5,0,1)
-	call PGLINE(numlin,dummy,nhi4)
+	!call PGENV(1.0,real(numlin),0.0,1.0,0,1)
+	call PGENV(11.5,22.5,0.0,1.0,0,1)
+      call PGLABEL('log NHI','CDDF(log NHI)','Column Density Dist')
+	call PGLINE(npoints,xs,CDDF)
+	call PGTEXT(12.6,0.8,'2')
+	call PGTEXT(13.6,0.8,'1')
+      call PGPTXT(16.0,0.5,0.0,1.0,'CDDF from Prochaska spline - 1')
+	call PGSLS(2)
+	call pgline(npoints,xs,dummyy)
+      call PGPTXT(16.0,0.4,0.0,1.0,'CDDF from QSOSIM9 (original) - 2')
 
-	call PGENV(1.0,real(numlin),1.7,3.3,0,1)
-	call PGLINE(numlin,dummy,z4)
+	call pgsls(1)
+	call PGENV(1.0,real(numlin),11.5,22.5,0,1)
+	call PGLABEL('Line number','log NHI','Random choice of NHI')
+	call PGLINE(numlin,dummy,nhi4)
       call pgend
 
       return
