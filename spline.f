@@ -1,5 +1,5 @@
 !====================================================================
-      subroutine spline(npts,zqso,xs,ys,CDDF,numlin)
+      subroutine spline(npts,xs,ys,CDDF,nl)
 !====================================================================
 ! Spline interpolation
 ! Comments: values of function f(x) are calculated in n base points
@@ -13,10 +13,11 @@
       real*4, dimension(n) :: xi,yi,b,c,d
       real*4, dimension(npts) :: xs,xe,ys,ye,z,CDDF,H
       real*4, dimension(npts) :: sumN,sumX,sumW, weight, lines
-      integer i,j,numlin,npts
-      real*4 ispline, dx, dxe, total
-      real*4  zstart,zend, zqso, dz, bigX
-      external func, gamma
+      integer i,j,numlin,npts,nl
+      real*4 ispline
+      real*4 dx, dxe, total
+      real*4  zstart,zend, dz, bigX
+      external func, gamma, gauss16
       real*4 func, gamma, gauss16
 
 c Data points
@@ -35,8 +36,9 @@ c s(x) = y(i) + b(i)*(x-x(i)) + c(i)*(x-x(i))**2 + d(i)*(x-x(i))**3
       xmin = 12.0
       xmax = 22.0
 !====================================================================
-      write (6,*) '-----------------------------------------'
+      write (6,*) '--------------------------------------------------'
       write (6,*) 'Started SPLINE!'
+      write (6,*) 'Calculating dn/dNHI...'
 !====================================================================
 !  step 3: interpolation at npts points
 c      errav = 0.0
@@ -44,7 +46,7 @@ c      errav = 0.0
       total=0.
 !---- calculate normalization constant ------------------------------
       do i=1, npts
-         total=total+gauss16(gamma,0.,float(i))
+         total=total+gauss16(gamma,0.0,float(i))
       end do
 !---- calculate weight of steps -------------------------------------
       do i=1, npts
@@ -57,7 +59,7 @@ c      errav = 0.0
       end do
 !---- interpolate spline ys on x points -----------------------------
       do i=1,npts
-         xs(i)= xmin + dx*float(i-1)/(npts-1)!dx*weight(npts+1-i)
+         xs(i)= xmin + dx*dble(i-1)/(npts-1)
          xe(i) = 10**xs(i)
          ys(i) = ispline(xs(i), xi, yi, b, c, d, n)
          ye(i) = 10**ys(i)             
@@ -109,8 +111,8 @@ c      errav = 0.0
 ! n(i) = H * sumN(i)
 !====================================================================
 ! calculate 
-      zstart=1.87   !zstart=(wstart/1215.67)-1, wstart=3500
-      zend=zqso
+      zstart=1.96132994   !zstart=(wstart/1215.67)-1, wstart=3500
+      zend=2.83167458
       dz=(zend-zstart)/npts
       total=gauss16(func,zstart,zend)
       do i=1,npts
@@ -125,10 +127,9 @@ c      errav = 0.0
 !!         write (*,*) i, x(i), sumN(i), sumX(i)
 !      end do
       bigX=gauss16(func,zstart,zend)
-      numlin=nint(sumN(npts)*gauss16(func,zstart,zend))
-      write (6,*) 'Total no. of lines = ', numlin
-      write (6,*) 'NHI lower limit = ',10**xmin
-      write (6,*) 'NHI upper limit = ',10**xmax
+      write (6,*) bigX
+      nl=nint(sumN(npts))!*gauss16(func,zstart,zend))
+      write (6,*) 'No. of lines in log NHI range, F(NHI) = ', nl
 !====================================================================      
       
       end subroutine spline
@@ -223,7 +224,8 @@ c      errav = 0.0
 !==========================================================
       implicit none
       integer, parameter :: n=8
-      real*4 gauss16, f, a, b
+      real*4 gauss16, f
+      real*4 a, b
       real*4 ti(n), ci(n)
       data ti/0.0950125098, 0.2816035507, 0.4580167776, 0.6178762444,   
      &   0.7554044083, 0.8656312023, 0.9445750230, 0.9894009349/ 

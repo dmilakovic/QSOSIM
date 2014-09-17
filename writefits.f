@@ -9,8 +9,8 @@ c GENERAL DECLARATIONS
 c Declare variables
       INTEGER :: unit,i,j,status,blocksize,bitpix,naxis,naxes,npts
       INTEGER :: nrows, tfields, varidat, colnum, idum, inoise
-      REAL*4 :: lambda(npts),flux(npts), flerr(npts), nnflux(npts)
-      REAL*4 :: ra,dec,zqso,alpha
+      REAL*8 :: lambda(npts),flux(npts), flerr(npts), nnflux(npts)
+      REAL*8 :: ra,dec,zqso,alpha
       CHARACTER*20 :: ttype1(4), tunit1(4), tform1(4)
       CHARACTER*20 :: ttype2(4), tunit2(4), tform2(4)
       CHARACTER*20 :: outfile, extname 
@@ -40,16 +40,16 @@ c Create a fits file
       end if
 c Define primary array parameters
       call FTPHPR(UNIT,simple,bitpix,naxis,naxes,0,1,extend,status)
-      call ftgerr(status,errtext)
-      print *,status,' ',errtext
+c      call ftgerr(status,errtext)
+c     print *,status,' ',errtext
 c-------------------------------------------------------------------------------
 c-------------------------------------------------------------------------------
 c Define data to be inputted into fits file
-      DATA ttype1/'RA','DEC','ZQSO','ALPHA'/
+      DATA ttype1/'RA','DEC','Z_QSO','ALPHA'/
       DATA ttype2/'LAMBDA','FLUX','IVAR','NNFLUX'/
       
-      DATA tform1/'E','E','E','E'/
-      DATA tform2/'E','E','E','E'/
+      DATA tform1/'d','d','d','d'/
+      DATA tform2/'d','d','d','d'/
       DATA tunit1/'','','',''/
       DATA tunit2/'','','',''/
 c Create the first binary table HDU
@@ -61,13 +61,13 @@ c Create the first binary table HDU
      &            extname,varidat,status)
 c Rename header column names and assign values
       call FTMNAM(unit,'ttype1','RA',status)
-      call FTMKYF(unit,'RA',ra,5,'',status)
+      call FTMKYD(unit,'RA',ra,5,'',status)
       call FTMNAM(unit,'ttype2','DEC',status)
-      call FTMKYF(unit,'DEC',dec,5,'',status)
-      call FTMNAM(unit,'ttype3','ZQSO',status)
-      call FTMKYF(unit,'ZQSO',zqso,5,'',status)
+      call FTMKYD(unit,'DEC',dec,5,'',status)
+      call FTMNAM(unit,'ttype3','Z_QSO',status)
+      call FTMKYD(unit,'ZQSO',zqso,5,'',status)
       call FTMNAM(unit,'ttype4','ALPHA',status)
-      call FTMKYF(unit,'ALPHA',alpha,5,'',status)
+      call FTMKYD(unit,'ALPHA',alpha,5,'',status)
 c      call ftgerr(status,errtext)
 c      print *,status,' ',errtext
 c Create the second binary table HDU with data pertaining each QSO
@@ -78,10 +78,10 @@ c      write (*,250)flerr(1:10)
       extname='QSO'
       call FTIBIN(unit,nrows,tfields,ttype2,tform2,tunit2,
      &            extname,varidat,status)
-      call FTPCLE(unit,1,1,1,nrows,lambda,status)
-      call FTPCLE(unit,2,1,1,nrows,flux,status)
-      call FTPCLE(unit,3,1,1,nrows,flerr,status)
-      call FTPCLE(unit,4,1,1,nrows,nnflux,status)
+      call FTPCLD(unit,1,1,1,nrows,lambda,status)
+      call FTPCLD(unit,2,1,1,nrows,flux,status)
+      call FTPCLD(unit,3,1,1,nrows,flerr,status)
+      call FTPCLD(unit,4,1,1,nrows,nnflux,status)
 c Close fits file
       call FTCLOS(unit,status)
       call ftgerr(status,errtext)

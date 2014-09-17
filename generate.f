@@ -7,27 +7,32 @@ c  OUTPUT:  artificial SDSS catalogue
       CHARACTER :: infile*20, outfile*20, descriptor*6
       INTEGER,PARAMETER :: nrows=25
       INTEGER,PARAMETER :: npoints=10000
-      INTEGER :: i,j,inoise, numlin, npts
+      INTEGER :: i,j,inoise, numlin, npts, nl
       INTEGER,DIMENSION(nrows) :: numlls
-      REAL :: wstart,wend,dw,nc,nce,nuplim,nuplime,dvavoid
-      REAL,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,s2n,sigblur
-      REAL*8 :: lambda(262144),flux(262144), da4(262144)
-      REAL*8 :: flerr(262144), nnflux(262144)
+      REAL*4 :: wstart,wend,dw
+      REAL*4 :: nc,nuplim,dvavoid
+      REAL*4 :: X
+      REAL*4,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,s2n,sigblur
+      REAL*4 :: lambda(262144),flux(262144), da4(262144)
+      REAL*4 :: flerr(262144), nnflux(262144)
       real*4, dimension(npoints) :: xs,ys,CDDF,H
-      EXTERNAL :: qsosim9, spline, readfits, writefits
+      EXTERNAL :: qsosim9, spline, readfits, writefits, absdist
 
       infile='sin.fits'
       call readfits(infile, wstart,wend,dw,nc,nuplim,inoise,dvavoid,
-     &             ra,dec,zqso,alpha,vmag,sigblur,s2n,numlls)
+     &             ra,dec,zqso,alpha,vmag,sigblur,s2n)
  100  format(f10.5,2x,f10.5,2x,f8.5,2x,f8.5)
-      nc=nc*1E12
-      nuplim=nuplim*1E21 
+      call spline(npoints,xs,ys,CDDF,nl)
       do i=1,1
-         call spline(npoints,3.3,xs,ys,CDDF,numlin)
-         call qsosim9(3.3,alpha(i),vmag(i),wstart,wend,dw,
-     +          nc,nuplim,sigblur(i),s2n(i),inoise,numlls(i),dvavoid,
-     +          npts,lambda,flux,flerr,nnflux,npoints,xs,ys,CDDF,numlin,
-     +          da4)
+         write (6,*) wstart, zqso(i)
+         call absdist(wstart,zqso(i),X)
+         write (6,*) X
+         numlin=nint(nl*X)
+         write (6,*) 'Total number of lines = F(NHI) * X(z)'
+         write (6,*) 'Total number of lines = ', numlin
+         call qsosim9(zqso(i),alpha(i),vmag(i),wstart,wend,dw,
+     +          nc,nuplim,sigblur(i),s2n(i),inoise,dvavoid,
+     +          npts,lambda,flux,flerr,nnflux,npoints,xs,ys,CDDF,numlin)
 c         do j=1,npoints,20
 c            write (*,*) j, xs(j), CDDF(j)
 c         end do
