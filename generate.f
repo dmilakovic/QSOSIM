@@ -9,13 +9,13 @@ c  OUTPUT:  artificial SDSS catalogue
       INTEGER,PARAMETER :: npoints=10000
       INTEGER :: i,j,inoise, numlin, npts, nl
       INTEGER,DIMENSION(nrows) :: numlls
-      REAL*4 :: wstart,wend,dw
-      REAL*4 :: nc,nuplim,dvavoid
-      REAL*4 :: X
-      REAL*4,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,s2n,sigblur
-      REAL*4 :: lambda(262144),flux(262144), da4(262144)
-      REAL*4 :: flerr(262144), nnflux(262144)
-      real*4, dimension(npoints) :: xs,ys,CDDF,H
+      REAL*8 :: wstart,wend,dw
+      REAL*8 :: nc,nuplim,dvavoid
+      REAL*8 :: X
+      REAL*8,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,s2n,sigblur
+      REAL*8 :: lambda(262144),flux(262144), da4(262144)
+      REAL*8 :: flerr(262144), nnflux(262144)
+      real*8, dimension(npoints) :: xs,ys,CDDF,H
       EXTERNAL :: qsosim9, spline, readfits, writefits, absdist
 
       infile='sin.fits'

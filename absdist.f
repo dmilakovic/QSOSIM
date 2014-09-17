@@ -2,9 +2,9 @@
 	subroutine absdist(wstart,zqso,bigX)
 !======================================================================	
 	IMPLICIT NONE
-	real*4 :: wstart, bigX
-	real*4 :: zstart, zend, zqso
-	real*4 f, gauss16
+	real*8 :: wstart, bigX
+	real*8 :: zstart, zend, zqso
+	real*8 f, gauss16
 	external f, gauss16
 	
 	write (6,*) '--------------------------------------------------'
@@ -19,7 +19,7 @@
 !  Function X(z)
 !======================================================================
       function f(x)
-      real*4 f, x
+      real*8 f, x
       f = ((1+x)**2)*(0.3*((1+x)**3) + 0.7)**(-0.5)
       return
       end function f

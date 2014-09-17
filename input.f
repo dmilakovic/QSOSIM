@@ -10,11 +10,11 @@ c Declare variables
       INTEGER :: unit,i,j,status,blocksize,bitpix,naxis,naxes
       INTEGER :: nrows, tfields, varidat, colnum, idum, inoise
       INTEGER, PARAMETER :: nobj=25
-      REAL*4 :: ramin, ramax, dra, decmin, decmax, ddec, zmin, zmax, dz
-      REAL*4 :: alphamin, alphamax, dalpha ,nc, nuplim
-      REAL*4 :: wstart, wend, dw
+      REAL*8 :: ramin, ramax, dra, decmin, decmax, ddec, zmin, zmax, dz
+      REAL*8 :: alphamin, alphamax, dalpha ,nc, nuplim
+      REAL*8 :: wstart, wend, dw
       REAL :: ran3
-      REAL*4,DIMENSION(nobj) :: ra, dec, zqso, alpha, vmag, dvavoid, 
+      REAL*8,DIMENSION(nobj) :: ra, dec, zqso, alpha, vmag, dvavoid, 
      +                        sigblur, s2n
 c      INTEGER,DIMENSION(nobj) :: numlls
 c      REAL*4,DIMENSION(nobj) :: nhills1,blls1,zlls1,nhills2,blls2,zlls2
@@ -100,8 +100,8 @@ c Define data to be inputted into fits file
       DATA ttype2/'RA','DEC','Z_qso','alpha','vmag','sigblur',
      &            's2n'/
       
-      DATA tform1/'e','e','e','e','e','J','e'/
-      DATA tform2/'e','e','e','e','e','e','e'/
+      DATA tform1/'d','d','d','d','d','J','d'/
+      DATA tform2/'d','d','d','d','d','d','d'/
       DATA tunit1/'','','','','','',''/
       DATA tunit2/'','','','','','',''/
 c Create the first binary table HDU
@@ -113,19 +113,19 @@ c Create the first binary table HDU
      &            extname,varidat,status)
 c Rename header column names and assign values
       call FTMNAM(unit,'ttype1','wstart',status)
-      call FTMKYE(unit,'wstart',wstart,1,'Start wavelength',status)
+      call FTMKYD(unit,'wstart',wstart,3,'Start wavelength',status)
       call FTMNAM(unit,'ttype2','wend',status)
-      call FTMKYE(unit,'wend',wend,1,'End wavelength',status)
+      call FTMKYD(unit,'wend',wend,3,'End wavelength',status)
       call FTMNAM(unit,'ttype3','dw',status)
-      call FTMKYE(unit,'dw',dw,2,'Pixel size',status)
+      call FTMKYD(unit,'dw',dw,2,'Pixel size',status)
       call FTMNAM(unit,'ttype4','nc',status)
-      call FTMKYE(unit,'nc',nc,2,'N(HI) lower cut-off',status)
+      call FTMKYD(unit,'nc',nc,2,'N(HI) lower cut-off',status)
       call FTMNAM(unit,'ttype5','nuplim',status)
-      call FTMKYE(unit,'nuplim',nuplim,2,'N(HI) upper cut-off',status)
+      call FTMKYD(unit,'nuplim',nuplim,2,'N(HI) upper cut-off',status)
       call FTMNAM(unit,'ttype6','inoise',status)
       call FTMKYJ(unit,'inoise',inoise,'inoise parameter',status)
       call FTMNAM(unit,'ttype7','dvavoid',status)
-      call FTMKYE(unit,'dvavoid',dvavoid,3,'Avoidance zone',status)
+      call FTMKYD(unit,'dvavoid',dvavoid,3,'Avoidance zone',status)
       call ftgerr(status,errtext)
       print *,status,' ',errtext
 c Create the second binary table HDU with data pertaining each QSO
@@ -134,13 +134,13 @@ c Create the second binary table HDU with data pertaining each QSO
       extname='QSO'
       call FTIBIN(unit,nrows,tfields,ttype2,tform2,tunit2,
      &            extname,varidat,status)
-      call FTPCLE(unit,1,1,1,nrows,ra,status)
-      call FTPCLE(unit,2,1,1,nrows,dec,status)
-      call FTPCLE(unit,3,1,1,nrows,zqso,status)
-      call FTPCLE(unit,4,1,1,nrows,alpha,status)
-      call FTPCLE(unit,5,1,1,nrows,vmag,status)
-      call FTPCLE(unit,6,1,1,nrows,sigblur,status)
-      call FTPCLE(unit,7,1,1,nrows,s2n,status)
+      call FTPCLD(unit,1,1,1,nrows,ra,status)
+      call FTPCLD(unit,2,1,1,nrows,dec,status)
+      call FTPCLD(unit,3,1,1,nrows,zqso,status)
+      call FTPCLD(unit,4,1,1,nrows,alpha,status)
+      call FTPCLD(unit,5,1,1,nrows,vmag,status)
+      call FTPCLD(unit,6,1,1,nrows,sigblur,status)
+      call FTPCLD(unit,7,1,1,nrows,s2n,status)
 c Close fits file
       call FTCLOS(unit,status)
       call ftgerr(status,errtext)

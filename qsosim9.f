@@ -12,17 +12,19 @@ c ----------------------------------------------------------------------------
 	  real*8 da(262144),da_err(262144),da_err4mod(262144)
 	  real*4 wems(30),relstr(30)
 	  real*4 sum,nhi,b,z,g,z1p1,z2p1,beta,x,gp1,w,ff
-	  real*4 a12p5,nc,nuplim,rn,a13p75,mbp1,zqso,zqsop1,pi
-	  real*4 c,d,p,q,r,s,s2n,dvavoid,vlight,zleft,zright
+	  real*4 a12p5,rn,a13p75,a13p1,mbp1,zqsop1,pi
+	  real*4 c,d,p,q,r,s,vlight,zleft,zright
 	  real*4 epsilon, lognhi, delta,mdelta
 	  real*4 nhills(20),blls(20),zlls(20)
-	  real*4 lambda(262144),flux(262144)
-	  real*4 flerr(262144), nnflux(262144)
-          real*8 alm, fik,asm,sigblur
+	  real*8 zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,sigblur
+	  real*8 s2n,dvavoid
+	  real*8 lambda(262144),flux(262144)
+	  real*8 flerr(262144), nnflux(262144)
+          real*8 alm, fik,asm
 	  real*4 n1,n2,n3
 	  real*4 factor
-	  real*4, dimension(npoints) :: xs,ys,CDDF,dummy,nhi4,z4, dummyy
-	  integer npoints,idum,numlls,iflag,inoise,index,numlin
+	  real*8, dimension(npoints) :: xs,ys,CDDF,dummy,nhi4,z4, dummyy
+	  integer npts,npoints,idum,numlls,iflag,inoise,index,numlin
 
 	  data pi/3.14159265/
 	  data vlight/299792.458/
@@ -136,9 +138,10 @@ c Random selection of NHI and redshifts (MODIFIED)
 ! --------------------------------------------------------------------
         if ((lognhi.ge.12.0).and.(lognhi.lt.14.0)) then
            g=1.51
-           a=10**1.52
-	   factor=(14.0-12.0)/(14.0-13.1)
-	   n1=a/(g+1.)*((z2p1)**(g+1.)-(z1p1)**(g+1.))*factor**2
+           a13p1=10**1.52
+	   beta=1.43
+	   a=a13p1*((10**12.0)/(10**13.1))**(1.-beta)
+	   n1=a/(g+1.)*((z2p1)**(g+1.)-(z1p1)**(g+1.))
         else if ((lognhi.ge.14.0).and.(lognhi.lt.17.0)) then
            g=2.16
 	   a=10**0.72
@@ -177,7 +180,20 @@ c      end do
      :                           dble(z),dble(b),'H ','I   ')
 
       end do
-      
+	write (6,*) 'Calculating number of lines using three power laws
+     & (Kim et al. 2013)'
+	  n=nint(n1+n2+n3)
+	write (6,*) 'Total no. of lines from power laws = ',n
+	write (6,*) 'Calculating number of lines in original QSOSIM9'
+	  g=2.0
+	  a13p75=10.0
+	  beta=1.7
+	  gp1=g+1.
+	  a=a13p75*((nc)/(10**13.75))**(1.-beta)
+	  rn=(a/gp1)*( z2p1**gp1 - z1p1**gp1 )
+	  n=nint(rn)
+	  write(6,*)' Total no. of lines from QSOSIM9 = ',n
+   
 c End of loop for forest.  Now put the LLS's in
 c      do j=1,numlls
 c        call spvoigt (da,wda,npts,dble(nhills(j)),dble(zlls(j)),
@@ -219,20 +235,7 @@ c inoise=0 is constant.  inoise=1 gets worse towards blue. See qsosim9.pdf.
         da4smno(i) = da4conv(i) + da_err4mod(i)
       end do
       end if
-	write (6,*) 'Calculating number of lines using three power laws
-     & (Kim et al. 2013)'
-	  n=nint(n1+n2+n3)
-	write (6,*) 'Total no. of lines from power laws = ',n
-	write (6,*) 'Calculating number of lines in original QSOSIM9'
-	  g=2.0
-	  a13p75=10.0
-	  beta=1.7
-	  gp1=g+1.
-	  a=a13p75*((nc)/(10**13.75))**(1.-beta)
-	  rn=(a/gp1)*( z2p1**gp1 - z1p1**gp1 )
-	  n=nint(rn)
-	  write(6,*)' Total no. of lines from QSOSIM9 = ',n
-
+	
 c Plot spectrum
       call PGBEGIN (0,'/vcps',1,3)
       xmin=wstart

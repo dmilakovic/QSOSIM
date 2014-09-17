@@ -10,15 +10,15 @@
       implicit none
       real :: xmin, xmax, ymin, ymax      ! given interval of x()
       integer, parameter :: n=8 ! number of points of spline
-      real*4, dimension(n) :: xi,yi,b,c,d
-      real*4, dimension(npts) :: xs,xe,ys,ye,z,CDDF,H
-      real*4, dimension(npts) :: sumN,sumX,sumW, weight, lines
+      real*8, dimension(n) :: xi,yi,b,c,d
+      real*8, dimension(npts) :: xs,xe,ys,ye,z,CDDF,H
+      real*8, dimension(npts) :: sumN,sumX,sumW, weight, lines
       integer i,j,numlin,npts,nl
-      real*4 ispline
-      real*4 dx, dxe, total
-      real*4  zstart,zend, dz, bigX
+      real*8 ispline
+      real*8 dx, dxe, total
+      real*8  zstart,zend, dz, bigX
       external func, gamma, gauss16
-      real*4 func, gamma, gauss16
+      real*8 func, gamma, gauss16
 
 c Data points
           data xi/12.0,15.0,17.0,18.0,20.0,21.0,21.5,22.0/
@@ -46,14 +46,14 @@ c      errav = 0.0
       total=0.
 !---- calculate normalization constant ------------------------------
       do i=1, npts
-         total=total+gauss16(gamma,0.0,float(i))
+         total=total+gauss16(gamma,dble(0.0),dble(i))
       end do
 !---- calculate weight of steps -------------------------------------
       do i=1, npts
          weight(i) = 0
          sumW(i) = 0
          do j=1,i
-            sumW(i) = sumW(i) + gauss16(gamma,0.0,float(j))
+            sumW(i) = sumW(i) + gauss16(gamma,dble(0.0),dble(j))
          end do
          weight(i) =float(npts+1-i+1)/(npts-1)! 1 - sumW(i)/total !
       end do
@@ -111,23 +111,23 @@ c      errav = 0.0
 ! n(i) = H * sumN(i)
 !====================================================================
 ! calculate 
-      zstart=1.96132994   !zstart=(wstart/1215.67)-1, wstart=3500
-      zend=2.83167458
-      dz=(zend-zstart)/npts
-      total=gauss16(func,zstart,zend)
-      do i=1,npts
-         z(i)=zstart+dz*float(i-1)
-      end do
-      do i=1,npts
-         sumX(i) = gauss16(func,z(1),z(i))
-         H(i) = sumX(i)/total
+c      zstart=1.96132994   !zstart=(wstart/1215.67)-1, wstart=3500
+c      zend=2.83167458
+c      dz=(zend-zstart)/npts
+c      total=gauss16(func,zstart,zend)
+c      do i=1,npts
+c         z(i)=zstart+dz*float(i-1)
+c      end do
+c      do i=1,npts
+c         sumX(i) = gauss16(func,z(1),z(i))
+c         H(i) = sumX(i)/total
 !         write (*,*) i,sum(i),H(i)
-      end do
+c      end do
 !      do i=1,npts
 !!         write (*,*) i, x(i), sumN(i), sumX(i)
 !      end do
-      bigX=gauss16(func,zstart,zend)
-      write (6,*) bigX
+c      bigX=gauss16(func,zstart,zend)
+c      write (6,*) bigX
       nl=nint(sumN(npts))!*gauss16(func,zstart,zend))
       write (6,*) 'No. of lines in log NHI range, F(NHI) = ', nl
 !====================================================================      
@@ -139,7 +139,7 @@ c      errav = 0.0
 !  Function X(z)
 !======================================================================
       function func(x)
-      real*4 f, x
+      real*8 f, x
       f = ((1+x)**2)*(0.3*((1+x)**3) + 0.7)**(-0.5)
       return
       end function func
@@ -147,7 +147,7 @@ c      errav = 0.0
 !  Function Gamma(k,x)
 !======================================================================
       function gamma(x)
-      real*4 f, x, k, th
+      real*8 f, x, k, th
       k=1.0
       th=0.5
       f = x**(k-1)*exp(-x/th)
@@ -170,11 +170,11 @@ c      errav = 0.0
 ! ispline = interpolated value at point u
 !=======================================================================
       implicit none
-      real*4 ispline
+      real*8 ispline
       integer n
-      real*4  u, x(n), y(n), b(n), c(n), d(n)
+      real*8  u, x(n), y(n), b(n), c(n), d(n)
       integer i, j, k
-      real*4 dx
+      real*8 dx
 
 ! if u is ouside the x() interval take a boundary value (left or right)
       if(u <= x(1)) then
@@ -224,14 +224,14 @@ c      errav = 0.0
 !==========================================================
       implicit none
       integer, parameter :: n=8
-      real*4 gauss16, f
-      real*4 a, b
-      real*4 ti(n), ci(n)
+      real*8 gauss16, f
+      real*8 a, b
+      real*8 ti(n), ci(n)
       data ti/0.0950125098, 0.2816035507, 0.4580167776, 0.6178762444,   
      &   0.7554044083, 0.8656312023, 0.9445750230, 0.9894009349/ 
       data ci/0.1894506104, 0.1826034150, 0.1691565193, 0.1495959888,
      &   0.1246289712, 0.0951585116, 0.0622535239, 0.0271524594/ 
-      real*4 r, m, c
+      real*8 r, m, c
       integer i
 
       r = 0.0;

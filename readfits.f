@@ -24,11 +24,11 @@ c Declare variables
       INTEGER :: status,unit,readwrite,blocksize,hdutype,ntable,inoise
       INTEGER,PARAMETER :: nrows=25
       INTEGER :: felem,nelems,nullj,nfound,irow,colnum
-      REAL :: nulle,density
-      REAL*4 :: wstart,wend,dw
-      REAL*4 :: nc, nuplim,dvavoid
+      REAL :: nulle
+      REAL*8 :: wstart,wend,dw
+      REAL*8 :: nc, nuplim,dvavoid
       INTEGER,DIMENSION(nrows):: numlls
-      REAL*4,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,
+      REAL*8,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,
      &                                 sigblur,s2n
       character :: filename*20,ttype(20)*10!, nhills,blls,zlls
       logical :: anynull
@@ -49,22 +49,23 @@ c Read contents of 'GENERAL' (ntable=2) binary table
 c Read data from columns
       ntable=2
       call ftmahd(unit,ntable,hdutype,status)
-      call FTGKYE(unit,'wstart',wstart,comment,status)
-      call FTGKYE(unit,'wend',wend,comment,status)
-      call FTGKYE(unit,'dw',dw,comment,status)
-      call FTGKYE(unit,'nc',nc,comment,status)
-      call FTGKYE(unit,'nuplim',nuplim,comment,status)
+      call FTGKYD(unit,'wstart',wstart,comment,status)
+      call FTGKYD(unit,'wend',wend,comment,status)
+      call FTGKYD(unit,'dw',dw,comment,status)
+      call FTGKYD(unit,'nc',nc,comment,status)
+      call FTGKYD(unit,'nuplim',nuplim,comment,status)
       call FTGKYJ(unit,'inoise',inoise,comment,status)
-      call FTGKYE(unit,'dvavoid',dvavoid,comment,status)
+      call FTGKYD(unit,'dvavoid',dvavoid,comment,status)
  100  format(2x,a10,d9.3,a4)
+ 125  format(2x,a10,f9.3,a4)
  150  format(2x,a10,i3)
-      write (*,100)'wstart =',wstart
-      write (*,100)'wend =',wend
-      write (*,100)'dw =',dw
+      write (*,125)'wstart =',wstart
+      write (*,125)'wend =',wend
+      write (*,125)'dw =',dw
       write (*,100)'nc =',nc
       write (*,100)'nuplim =',nuplim
       write (*,150)'inoise =',inoise
-      write (*,100)'dvavoid =',dvavoid
+      write (*,125)'dvavoid =',dvavoid
 c------------------------------------------------------------------------------
 c Read contents of 'QSO' (ntable=3) binary table
       ntable=3
@@ -86,19 +87,19 @@ c Read column data, one row at a time, and print them out
       nullj=0
       write (*,300)'RA','DEC','Z','alpha'
       do irow=1,nrows
-            call FTGCVE(unit,1,irow,felem,nelems,nulle,ra(irow),
+            call FTGCVD(unit,1,irow,felem,nelems,nulle,ra(irow),
      &       anynull,status)
-            call FTGCVE(unit,2,irow,felem,nelems,nulle,dec(irow),
+            call FTGCVD(unit,2,irow,felem,nelems,nulle,dec(irow),
      &       anynull,status)
-            call FTGCVE(unit,3,irow,felem,nelems,nulle,zqso(irow),
+            call FTGCVD(unit,3,irow,felem,nelems,nulle,zqso(irow),
      &       anynull,status)
-            call FTGCVE(unit,4,irow,felem,nelems,nulle,alpha(irow),
+            call FTGCVD(unit,4,irow,felem,nelems,nulle,alpha(irow),
      &       anynull,status)
-            call FTGCVE(unit,5,irow,felem,nelems,nulle,vmag(irow),
+            call FTGCVD(unit,5,irow,felem,nelems,nulle,vmag(irow),
      &       anynull,status)
-            call FTGCVE(unit,6,irow,felem,nelems,nulle,sigblur(irow),
+            call FTGCVD(unit,6,irow,felem,nelems,nulle,sigblur(irow),
      &       anynull,status)
-            call FTGCVE(unit,7,irow,felem,nelems,nulle,s2n(irow),
+            call FTGCVD(unit,7,irow,felem,nelems,nulle,s2n(irow),
      &       anynull,status)
             write (*,200)irow,ra(irow),dec(irow),zqso(irow),alpha(irow)
       end do
