@@ -1,7 +1,6 @@
 c-------------------------------------------------------------------------------
       SUBROUTINE readfits(filename, wstart,wend,dw,nc,nuplim,inoise,
-     +                   dvavoid,ra,dec,zqso,alpha,vmag,sigblur,s2n,
-     +                   numlls)
+     +                   dvavoid,ra,dec,zqso,alpha,vmag,sigblur,s2n)
 c     PURPOSE: read fits file containing data for qsosim9
 c     INPUT: filename  name of the fits file
 c     OUTPUT: 
@@ -18,7 +17,6 @@ c     OUTPUT:
 *            alpha     spectral index (array)
 *            vmag      V magnitude (array)
 *            sigblur   spectral resolution (array)
-*            numlls    number of user specified additional absorption systems
 c------------------------------------------------------------------------------
 c GENERAL DECLARATIONS
       IMPLICIT NONE
@@ -26,10 +24,11 @@ c Declare variables
       INTEGER :: status,unit,readwrite,blocksize,hdutype,ntable,inoise
       INTEGER,PARAMETER :: nrows=25
       INTEGER :: felem,nelems,nullj,nfound,irow,colnum
-      REAL :: nulle,density
-      REAL :: wstart,wend,dw,nc,dvavoid,nuplim
+      REAL :: nulle
+      REAL*8 :: wstart,wend,dw
+      REAL*8 :: nc, nuplim,dvavoid
       INTEGER,DIMENSION(nrows):: numlls
-      REAL,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,
+      REAL*8,DIMENSION(nrows) :: ra,dec,zqso,alpha,vmag,
      &                                 sigblur,s2n
       character :: filename*20,ttype(20)*10!, nhills,blls,zlls
       logical :: anynull
@@ -50,22 +49,23 @@ c Read contents of 'GENERAL' (ntable=2) binary table
 c Read data from columns
       ntable=2
       call ftmahd(unit,ntable,hdutype,status)
-      call FTGKYE(unit,'wstart',wstart,comment,status)
-      call FTGKYE(unit,'wend',wend,comment,status)
-      call FTGKYE(unit,'dw',dw,comment,status)
-      call FTGKYE(unit,'nc',nc,comment,status)
-      call FTGKYE(unit,'nuplim',nuplim,comment,status)
+      call FTGKYD(unit,'wstart',wstart,comment,status)
+      call FTGKYD(unit,'wend',wend,comment,status)
+      call FTGKYD(unit,'dw',dw,comment,status)
+      call FTGKYD(unit,'nc',nc,comment,status)
+      call FTGKYD(unit,'nuplim',nuplim,comment,status)
       call FTGKYJ(unit,'inoise',inoise,comment,status)
-      call FTGKYE(unit,'dvavoid',dvavoid,comment,status)
- 100  format(2x,a10,f9.3,a4)
+      call FTGKYD(unit,'dvavoid',dvavoid,comment,status)
+ 100  format(2x,a10,d9.3,a4)
+ 125  format(2x,a10,f9.3,a4)
  150  format(2x,a10,i3)
-      write (*,100)'wstart =',wstart
-      write (*,100)'wend =',wend
-      write (*,100)'dw =',dw
-      write (*,100)'nc =',nc,'xE12'
-      write (*,100)'nuplim =',nuplim,'xE16'
+      write (*,125)'wstart =',wstart
+      write (*,125)'wend =',wend
+      write (*,125)'dw =',dw
+      write (*,100)'nc =',nc
+      write (*,100)'nuplim =',nuplim
       write (*,150)'inoise =',inoise
-      write (*,100)'dvavoid =',dvavoid
+      write (*,125)'dvavoid =',dvavoid
 c------------------------------------------------------------------------------
 c Read contents of 'QSO' (ntable=3) binary table
       ntable=3
@@ -73,33 +73,37 @@ c Read contents of 'QSO' (ntable=3) binary table
 c      ALLOCATE(ra(nrows),dec(nrows),zqso(nrows),alpha(nrows))
 c      ALLOCATE(vmag(nrows),sigblur(nrows))
 c      ALLOCATE(numlls(nrows),s2n(nrows))
+      if (status.eq.0)then 
+         call FTGERR(status, errtext)
+         print *,status, errtext
+      else 
+         call FTGERR(status, errtext)
+         print *,status,' ',errtext
+      end if
 c Read column data, one row at a time, and print them out
       felem=1
       nelems=1
       nulle=0.      
       nullj=0
-      write (*,300)'RA','DEC','Z','alpha','num LLS'
+      write (*,300)'RA','DEC','Z','alpha'
       do irow=1,nrows
-            call FTGCVE(unit,1,irow,felem,nelems,nulle,ra(irow),
+            call FTGCVD(unit,1,irow,felem,nelems,nulle,ra(irow),
      &       anynull,status)
-            call FTGCVE(unit,2,irow,felem,nelems,nulle,dec(irow),
+            call FTGCVD(unit,2,irow,felem,nelems,nulle,dec(irow),
      &       anynull,status)
-            call FTGCVE(unit,3,irow,felem,nelems,nulle,zqso(irow),
+            call FTGCVD(unit,3,irow,felem,nelems,nulle,zqso(irow),
      &       anynull,status)
-            call FTGCVE(unit,4,irow,felem,nelems,nulle,alpha(irow),
+            call FTGCVD(unit,4,irow,felem,nelems,nulle,alpha(irow),
      &       anynull,status)
-            call FTGCVE(unit,5,irow,felem,nelems,nulle,vmag(irow),
+            call FTGCVD(unit,5,irow,felem,nelems,nulle,vmag(irow),
      &       anynull,status)
-            call FTGCVE(unit,6,irow,felem,nelems,nulle,sigblur(irow),
+            call FTGCVD(unit,6,irow,felem,nelems,nulle,sigblur(irow),
      &       anynull,status)
-            call FTGCVE(unit,7,irow,felem,nelems,nulle,s2n(irow),
+            call FTGCVD(unit,7,irow,felem,nelems,nulle,s2n(irow),
      &       anynull,status)
-            call FTGCVJ(unit,8,irow,felem,nelems,nullj,numlls(irow),
-     &       anynull,status)
-            write (*,200)irow,ra(irow),dec(irow),zqso(irow),alpha(irow),
-     &       numlls(irow)
+            write (*,200)irow,ra(irow),dec(irow),zqso(irow),alpha(irow)
       end do
- 200  format(i2,4x,f10.5,2x,f10.3,2x,f10.5,2x,f6.4,2x,i7)
+ 200  format(i2,4x,f10.5,2x,f10.3,2x,f10.5,2x,f6.4)
  300  format(6x,a10,2x,a10,2x,a10,2x,a6,2x,a7)
 c Read column names that are relevant for LLS
 c      call FTGKNS(unit,'TTYPE',9,20,ttype,nfound,status)
@@ -112,6 +116,7 @@ c Close fits file
       if (status.eq.0)then 
          print *,status,' File closed'
       else 
+         call FTGERR(status, errtext)
          print *,status,' ',errtext
       end if
 c------------------------------------------------------------------------------

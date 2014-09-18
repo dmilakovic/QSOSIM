@@ -14,7 +14,7 @@ c ----------------------------------------------------------------------------
 	  real*4 sum,nhi,b,z,g,z1p1,z2p1,beta,x,gp1,w,ff
 	  real*4 a12p5,rn,a13p75,a13p1,mbp1,zqsop1,pi
 	  real*4 c,d,p,q,r,s,vlight,zleft,zright
-	  real*8 epsilon, lognhi, delta,mdelta
+	  real*4 epsilon, lognhi, delta,mdelta
 	  real*4 nhills(20),blls(20),zlls(20)
 	  real*8 zqso,alpha,vmag,wstart,wend,dw,nc,nuplim,sigblur
 	  real*8 s2n,dvavoid
