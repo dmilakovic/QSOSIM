@@ -1,0 +1,13 @@
+#makefile for plot.f
+FC=gfortran
+
+pgplot=-L/opt/local/lib -lpgplot
+X11=-L/usr/X11/lib -lX11
+
+
+all: q1 q2
+q1:  $(LINK.f) -c $(obj1) $(input) $(pgplot) $(X11)
+q2:  $(LINK.f) -o plot plot.o $(obj2) $(pgplot) $(X11)
+
+obj1=	plot.f power_laws.f spline.f
+obj2=	plot.o power_laws.o spline.o

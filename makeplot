@@ -1,0 +1,10 @@
+#makefile for plot_pl
+FC=gfortran
+
+pgplot=-L/opt/local/lib -lpgplot
+X11=-L/usr/X11/lib -lX11
+input=plot_pl.f
+output=plotpower
+
+all:
+	$(FC) -o $(output) $(input) $(pgplot) $(X11)

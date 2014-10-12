@@ -9,12 +9,13 @@ FC= gfortran
 #all: $(PROGRAMS)
 all: q1 q9
 
-obj1=	spline.f qsosim9.f readfits.f absdist.f generate.f
+obj1=	spline.f qsosim9.f readfits.f absdist.f power_laws.f generate.f
 obj2=	dsepvar.o ewred.o spvoigt.o voigt.o vp_lycont.o f13_read.o \
-		readfits.o qsosim9.o writefits.o spline.o absdist.o
+		readfits.o qsosim9.o writefits.o spline.o absdist.o \
+		power_laws.o
 
 #  Macbook Pro version
-q1: generate.f spline.f absdist.f qsosim9.f
+q1: generate.f spline.f absdist.f qsosim9.f power_laws.f
 	$(LINK.f) -c $(obj1)
 q9: qsosim9.o $(obj)
 	$(LINK.f) -o generate generate.o $(obj2) \

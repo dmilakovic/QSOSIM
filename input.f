@@ -44,8 +44,8 @@ c       numlls,dvavoid,nhills(i),blls(i),zlls(i)
       decmax=90.0
       ddec=decmax-decmin
      
-      zmin=2.5
-      zmax=3.3
+      zmin=2.0
+      zmax=4.2
       dz=zmax-zmin
       
       alphamin=-1
@@ -56,7 +56,7 @@ c       numlls,dvavoid,nhills(i),blls(i),zlls(i)
       wend=10400     !DR10 Ahn et al. 2013
       dw=0.05
       nc=1.00e12
-      nuplim=1.00e22
+      nuplim=1.00e14
       sigblur=3.0
       s2n=100
       inoise=1
@@ -75,7 +75,7 @@ c Generate random coordinates
       DO i=1,nobj
           ra(i)=ramin+dra*ran3(idum)
           dec(i)=decmin+ddec*ran3(idum)
-          zqso(i)=zmin+dz*ran3(idum)
+          zqso(i)=zmin+float(i)*dz/nobj
           alpha(i)=-0.7!alphamin+dalpha*ran3(idum)
           vmag(i)=16.0
       END DO

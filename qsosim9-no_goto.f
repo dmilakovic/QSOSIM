@@ -124,9 +124,11 @@ c Random selection of NHI and redshifts (MODIFIED)
 	index=0
 	nhi4(i)=0
 	z4(i)=0
-	mdelta=1.0
- 1	c=ran3(idum)
-	if (c.lt.1.0) then
+	mdelta=1.0	
+	do
+	  c=ran3(idum)
+	  if(c.gt.1.0) cycle
+	if (c.le.1.0) then
 ! -------------------------------------------------------------------
 	    do j=1,npoints
 	     delta=abs(c-CDDF(j))
@@ -135,9 +137,9 @@ c Random selection of NHI and redshifts (MODIFIED)
 		index=j
 	     end if
 	    end do
-	    else
-	       goto 1
-	    end if
+          end if
+	  exit
+	end do
 	lognhi=xs(index)
 	nhi=10**xs(index)
 	nhi4(i)=xs(index)
@@ -169,6 +171,7 @@ c Random selection of NHI and redshifts (MODIFIED)
 	   z=10**x -1.0
         end if
 	z4(i)=z
+	write (*,*) lognhi, z
 ! --------------------------------------------------------------------
 
 c b-params.  Guess at sigma and mean of b distribution of 3 and 23 km/s.
@@ -185,7 +188,7 @@ c      if(z.ge.zleft.and.z.le.zright)iflag=1
 c      end do
       if(nhi.ge.nuplim)iflag=1
       
-      if(iflag.eq.0)call spvoigt(da,wda,npts,dble(nhi),
+      if(iflag.eq.0)call spvoigt(da,wda,npts,dble(lognhi),
      :                           dble(z),dble(b),'H ','I   ')
 
       end do
@@ -233,7 +236,7 @@ c inoise=0 is constant.  inoise=1 gets worse towards blue. See qsosim9.pdf.
       end if
 	
 c Plot spectrum
-      call PGBEGIN (0,'/vcps',1,3)
+      call PGBEGIN (0,'/xserve',1,3)
       xmin=wstart
       xmax=wend
       ymin=0.0
@@ -247,6 +250,7 @@ c Plot spectrum
       end do
       ymax=ymax+0.5*ymax
       ymin=ymin-0.5*ymin
+	write (6,*) ymin,ymax
 
 c Data to be returned into main program
 	
@@ -262,12 +266,12 @@ c         write(*,100)lambda(i),flux(i),flerr(i),nnflux(i)
 
       call PGENV (xmin,xmax,ymin,ymax,0,1)
       call PGLABEL ('Wavelength','f(lambda)','Linear wavelengths')
-c      call pgline(npts,wda,da4smno)
+      call pgline(npts,wda,da4smno)
       call pgsci(5)
       call pgline(npts,wda,da4conv)
       call pgsls(2)
       call pgsci(2)
-c      call pgline(npts,wda,danoabs)
+      call pgline(npts,wda,danoabs)
       call pgsls(1)
       call pgsci(3)
       call pgline(npts,wda,da_err4)
@@ -347,14 +351,17 @@ c Uses ran3
       SAVE iset,gset
       DATA iset/0/
       if (iset.eq.0) then
+	do
 1       v1=2.*ran3(idum)-1.
         v2=2.*ran3(idum)-1.
         rsq=v1**2+v2**2
-        if(rsq.ge.1..or.rsq.eq.0.)goto 1
+        if(rsq.ge.1..or.rsq.eq.0.)cycle
         fac=sqrt(-2.*log(rsq)/rsq)
         gset=v1*fac
         gasdev3=v2*fac
         iset=1
+	exit
+	end do
       else
         gasdev3=gset
         iset=0

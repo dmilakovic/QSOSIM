@@ -1,5 +1,5 @@
 !====================================================================
-      subroutine spline(npts,xs,ys,CDDF)
+      subroutine spline(npts,xs,ys,CDDF,nl)
 !====================================================================
 ! Spline interpolation
 ! Comments: values of function f(x) are calculated in n base points
@@ -36,10 +36,9 @@ c s(x) = y(i) + b(i)*(x-x(i)) + c(i)*(x-x(i))**2 + d(i)*(x-x(i))**3
       xmin = 12.00  !12.00
       xmax = 22.00  !22.00
 !====================================================================
-      write (6,*)'=================================================='
+      write (6,*) '--------------------------------------------------'
       write (6,*) 'Started SPLINE!'
       write (6,*) 'Calculating dn/dN(HI)...'
-      write (6,*) 'Number of points = ',npts
 !====================================================================
 !  step 3: interpolation at npts points
 c      errav = 0.0
@@ -130,7 +129,7 @@ c      end do
 c      bigX=gauss16(func,zstart,zend)
 c      write (6,*) bigX
       nl=nint(lines(npts))!*gauss16(func,zstart,zend))
-c      write (6,*) 'No. of lines in log NHI range, F(NHI) = ', nl
+      write (6,*) 'No. of lines in log NHI range, F(NHI) = ', nl
 !====================================================================      
       
       end subroutine spline
