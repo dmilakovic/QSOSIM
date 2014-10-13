@@ -23,7 +23,7 @@ c  OUTPUT:  artificial SDSS catalogue
      &             ra,dec,zqso,alpha,vmag,sigblur,s2n)
  100  format(f10.5,2x,f10.5,2x,f8.5,2x,f8.5)
       call spline(npoints,xs,ys,CDDF,nl)
-      do i=1,1
+      do i=2,2
          write (6,*) wstart, zqso(i)
          call absdist(wstart,zqso(i),X)
          write (6,*) X
@@ -38,6 +38,7 @@ c            write (*,*) j, xs(j), CDDF(j)
 c         end do
          write (descriptor,'(I6.6)') i
          outfile='spec-'//descriptor//'.fits'
+         write (6,*) ra(i), dec(i), alpha(i)
          call writefits(outfile,ra(i),dec(i),zqso(i),alpha(i),npts,
      &                     lambda,flux,flerr,nnflux)
          write (*,*)'--------------------------------------------------'
